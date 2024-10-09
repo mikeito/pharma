@@ -1,0 +1,21 @@
+services:
+ postgres:
+   container_name: pharmacy_db
+   image: postgres:alpine3.18
+   env_file: ./.env
+   environment:
+     POSTGRES_DB: $POSTGRES_DATABASE
+     POSTGRES_USER: $POSTGRES_USER
+     POSTGRES_PASSWORD: $POSTGRES_ROOT_PASSWORD
+     PGDATA: /data/postgres
+   volumes:
+     - ./volumes/postgres:/data/postgres
+   ports:
+     - $POSTGRES_LOCAL_PORT:$POSTGRES_DOCKER_PORT
+   networks:
+     - postgres_network
+   restart: unless-stopped
+
+networks:
+ postgres_network:
+   driver: bridge

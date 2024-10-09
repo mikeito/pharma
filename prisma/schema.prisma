@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model User {
+  id           String    @id
+  username     String    @unique
+  displayName  String?
+  email        String    @unique
+  passwordHash String
+  googleId     String?   @unique
+  avatarUrl    String?
+  bio          String?
+  phoneNumber  String
+  role         String    @default("USER") 
+  drugs        Drug[]
+  sessions     Session[]
+
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Organisation {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  type         String   @db.VarChar(255)
+  name         String   @default("name") @db.VarChar(255)
+  email        String   @unique
+  telephone    String   @db.VarChar(255)
+  longitude    String   @db.VarChar(255)
+  latitude     String   @db.VarChar(255)
+  address      String   @db.VarChar(255)
+  openHours    String   @db.VarChar(255)
+  closingHours String   @db.VarChar(255)
+  drugs        Drug[]
+  userId       String
+}
+
+model Drug {
+  id             Int                   @id @default(autoincrement())
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  name           String                @db.VarChar(255)
+  description    String                @db.VarChar(255)
+  quantity       Int
+  price          Int
+  organisation   Organisation          @relation(fields: [organisationId], references: [id])
+  organisationId Int
+  User           User                  @relation(fields: [userId], references: [id])
+  userId         String
+  Reservations   DrugsOnReservations[]
+}
+
+model Reservation {
+  id        Int                   @id @default(autoincrement())
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  quantity  Int
+  date      DateTime
+  // User      User?    @relation(fields: [userId], references: [id])
+  // userId    Int?
+  validated Boolean @default(false)
+  code      String
+  drugs     DrugsOnReservations[]
+}
+
+model DrugsOnReservations {
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  reservationId Int
+  drug          Drug        @relation(fields: [drugId], references: [id])
+  drugId        Int
+  assignedAt    DateTime    @default(now())
+  assignedBy    String
+
+  @@id([reservationId, drugId])
+}
